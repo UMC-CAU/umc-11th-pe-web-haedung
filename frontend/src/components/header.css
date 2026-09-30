@@ -1,0 +1,77 @@
+.header {
+  display: flex;
+  justify-content: space-between; /* 왼쪽 그룹 / 오른쪽 그룹 양 끝으로 밀기 */
+  align-items: center;            /* 세로 중앙 정렬 */
+  padding: 20px 40px;
+  background-color: white;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 40px; /* 로고와 메뉴 사이 간격 */
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px; 
+  
+}
+
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  border: 2px solid black;
+  border-radius: 8px;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 24px; /* 메뉴 항목 사이 간격 */
+}
+
+.nav-link {
+  font-size: 15px;
+  color: #333;
+  text-decoration: none; /* 기본 밑줄 제거 */
+}
+
+.nav-link.active {
+  text-decoration: underline; /* 선택된 메뉴만 밑줄 */
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 50%; /* 동그랗게 */
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mypage-button {
+  background-color: #3b5aff; /* 파란색, Figma에서 정확한 hex 확인 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
