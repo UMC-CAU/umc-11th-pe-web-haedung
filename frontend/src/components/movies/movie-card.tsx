@@ -1,13 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import type { Movie } from '../../types/movie'
-import { cn } from '../../utils/cn'
+import { BookmarkButton } from '../bookmark-button'
 
 interface MovieCardProps {
   movie: Movie
-  onToggleBookmark: (movieId: number) => void
 }
 
-export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
+export default function MovieCard({ movie }: MovieCardProps) {
   return (
     <li className="flex w-full min-w-0 flex-col">
       <div className="relative">
@@ -23,21 +22,7 @@ export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
             className="block w-full aspect-2/3 rounded-lg object-cover"
           />
         </Link>
-        <button
-          className={cn(
-            'absolute top-2 right-2 flex size-8 cursor-pointer items-center justify-center rounded-lg border-2 border-white bg-black',
-            movie.isBookmarked && 'bg-[#3b5aff]',
-          )}
-          aria-label={movie.isBookmarked ? '북마크 해제' : '북마크 추가'}
-          aria-pressed={movie.isBookmarked}
-          onClick={() => onToggleBookmark(movie.id)}
-        >
-          <img
-            src={movie.isBookmarked ? '/icons/bookmark.svg' : '/icons/bookmark-outline.svg'}
-            alt=""
-            className="invert"
-          />
-        </button>
+        <BookmarkButton movieId={movie.id} />
       </div>
 
       <div className="mt-3">

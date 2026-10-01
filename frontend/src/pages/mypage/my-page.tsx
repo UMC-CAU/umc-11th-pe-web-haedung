@@ -1,31 +1,19 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { useAuth } from "../../auth/auth-context";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
 import { movies } from "../../data/movies";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 import "./my-page.css";
 
 const MOVIES_PER_PAGE = 10;
 
 export function MyPage() {
   const { profile } = useAuth();
-  const [bookmarkedIds, setBookmarkedIds] = useState(
-    () => new Set(movies.filter((movie) => movie.isBookmarked).map((movie) => movie.id)),
-  );
+  const bookmarkedMovieIds = useBookmarkStore((state) => state.bookmarkedMovieIds);
 
-  const bookmarkedMovies = movies
-    .filter((movie) => bookmarkedIds.has(movie.id))
-    .map((movie) => ({ ...movie, isBookmarked: true }));
+  const bookmarkedMovies = movies.filter((movie) => bookmarkedMovieIds.includes(movie.id));
   const totalPages = Math.max(1, Math.ceil(bookmarkedMovies.length / MOVIES_PER_PAGE));
-
-  function handleToggleBookmark(movieId: number) {
-    setBookmarkedIds((current) => {
-      const next = new Set(current);
-      next.delete(movieId); 
-      return next;
-    });
-  }
 
   return (
     <main className="mypage">
@@ -63,7 +51,7 @@ export function MyPage() {
           <p className="mypage-empty">아직 즐겨찾기한 영화가 없어요.</p>
         ) : (
           <>
-            <MovieGrid movies={bookmarkedMovies} onToggleBookmark={handleToggleBookmark} />
+            <MovieGrid movies={bookmarkedMovies} />
             <Pagination totalPages={totalPages} />
           </>
         )}

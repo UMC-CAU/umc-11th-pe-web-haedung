@@ -1,5 +1,6 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
+import { BookmarkButton } from "../../components/bookmark-button";
 import { movies } from "../../data/movies";
 import { cn } from "../../utils/cn";
 
@@ -7,7 +8,6 @@ export function MovieDetailPage() {
   const { movieId } = useParams({ from: "/movies/$movieId" });
   const movie = movies.find((item) => item.id === Number(movieId));
 
-  const [isBookmarked, setIsBookmarked] = useState(movie?.isBookmarked ?? false);
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
 
@@ -63,19 +63,7 @@ export function MovieDetailPage() {
         <section className="flex flex-col items-start gap-4 pt-1">
           <h2 className="text-xl font-extrabold text-[#111]">{movie.tagline}</h2>
           <p className="text-[13px] leading-[1.8] text-[#555]">{movie.overview}</p>
-          <button
-            type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-[#3b5aff] px-4 py-2.5 text-[13px] font-bold text-white"
-            aria-pressed={isBookmarked}
-            onClick={() => setIsBookmarked((prev) => !prev)}
-          >
-            <img
-              src={isBookmarked ? "/icons/bookmark.svg" : "/icons/bookmark-outline.svg"}
-              alt=""
-              className="size-4.5 invert"
-            />
-            {isBookmarked ? "즐겨찾기 해제" : "즐겨찾기"}
-          </button>
+          <BookmarkButton movieId={movie.id} variant="label" />
         </section>
 
         <form
