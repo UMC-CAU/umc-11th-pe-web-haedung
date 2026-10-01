@@ -1,8 +1,0 @@
-.movie-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 한 줄에 5개씩 */
-  gap: 24px;
-  list-style: none; /* ul 기본 점(•) 제거 */
-  padding: 0;
-  margin: 0;
-}
