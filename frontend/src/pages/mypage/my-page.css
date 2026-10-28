@@ -1,5 +1,5 @@
 .mypage {
-  min-height: calc(100vh - 80px); 
+  flex: 1; /* 헤더·푸터를 뺀 남은 높이만 채운다 */
   padding: 24px 80px 60px;
   background-color: #f5f6f8;
 }

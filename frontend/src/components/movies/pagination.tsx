@@ -1,22 +1,22 @@
-import { useState } from 'react'
 import { cn } from '../../utils/cn'
 
 interface PaginationProps {
+  currentPage: number
   totalPages: number
+  onPageChange: (page: number) => void
 }
 
 const arrowClass =
   'cursor-pointer rounded-lg border border-[#ddd] bg-white px-4 py-2 text-sm text-[#333] disabled:cursor-not-allowed disabled:text-[#ccc]'
 
-export default function Pagination({ totalPages }: PaginationProps) {
-  const [currentPage, setCurrentPage] = useState(1)
+export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
 
   return (
     <nav className="mt-10 flex items-center justify-center gap-2" aria-label="페이지 이동">
       <button
         className={arrowClass}
-        onClick={() => setCurrentPage((previous) => previous - 1)}
+        onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
         이전
@@ -30,7 +30,7 @@ export default function Pagination({ totalPages }: PaginationProps) {
             pageNumber === currentPage && 'bg-[#3b5aff] font-bold text-white',
           )}
           aria-current={pageNumber === currentPage ? 'page' : undefined}
-          onClick={() => setCurrentPage(pageNumber)}
+          onClick={() => onPageChange(pageNumber)}
         >
           {pageNumber}
         </button>
@@ -38,7 +38,7 @@ export default function Pagination({ totalPages }: PaginationProps) {
 
       <button
         className={arrowClass}
-        onClick={() => setCurrentPage((previous) => previous + 1)}
+        onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >
         다음

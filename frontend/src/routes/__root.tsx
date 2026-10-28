@@ -1,12 +1,7 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
-import  Header  from "../components/layout/header";
+import { createRootRoute } from "@tanstack/react-router";
+import RootLayout from "../components/layout/root-layout";
 
 export const Route = createRootRoute({
-  component: () => (
-    <>
-      <Header />
-      <Outlet />
-    </>
-  ),
+  component: RootLayout,
   notFoundComponent: () => <main>페이지를 찾을 수 없어요.</main>,
 });

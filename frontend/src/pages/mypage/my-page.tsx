@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { getMovieDetail } from "../../api/movies/get-movie-detail";
+import type { TmdbMovieDetail } from "../../api/movies/models";
 import { useAuth } from "../../auth/auth-context";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
-import { movies } from "../../data/movies";
 import { useBookmarkStore } from "../../stores/bookmark-store";
 import "./my-page.css";
 
@@ -12,8 +14,34 @@ export function MyPage() {
   const { profile } = useAuth();
   const bookmarkedMovieIds = useBookmarkStore((state) => state.bookmarkedMovieIds);
 
-  const bookmarkedMovies = movies.filter((movie) => bookmarkedMovieIds.includes(movie.id));
+  const [bookmarkedMovies, setBookmarkedMovies] = useState<TmdbMovieDetail[]>([]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    // 북마크된 id마다 상세 정보를 받아오고, 실패한 id(예: 예전 로컬 데이터 id)는 건너뛴다
+    Promise.allSettled(bookmarkedMovieIds.map((movieId) => getMovieDetail(movieId))).then(
+      (results) => {
+        if (ignore) return;
+        setBookmarkedMovies(
+          results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : [])),
+        );
+      },
+    );
+
+    return () => {
+      ignore = true;
+    };
+  }, [bookmarkedMovieIds]);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const totalPages = Math.max(1, Math.ceil(bookmarkedMovies.length / MOVIES_PER_PAGE));
+  // 즐겨찾기를 해제해 마지막 페이지가 사라지면 남아 있는 마지막 페이지를 보여준다
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const visibleMovies = bookmarkedMovies.slice(
+    (safeCurrentPage - 1) * MOVIES_PER_PAGE,
+    safeCurrentPage * MOVIES_PER_PAGE,
+  );
 
   return (
     <main className="mypage">
@@ -51,8 +79,12 @@ export function MyPage() {
           <p className="mypage-empty">아직 즐겨찾기한 영화가 없어요.</p>
         ) : (
           <>
-            <MovieGrid movies={bookmarkedMovies} />
-            <Pagination totalPages={totalPages} />
+            <MovieGrid movies={visibleMovies} />
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </>
         )}
       </section>

@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
+import { getMovies } from '../../api/movies/get-movies'
+import type { TmdbMovieListItem } from '../../api/movies/models'
 import MovieGrid from '../../components/movies/movie-grid'
 import Pagination from '../../components/movies/pagination'
-import { movies } from '../../data/movies'
 import { useViewSettingStore, type MovieSortBy } from '../../stores/view-setting-store'
 import { cn } from '../../utils/cn'
 
@@ -15,10 +17,45 @@ export default function MovieListPage() {
   const sortBy = useViewSettingStore((state) => state.sortBy)
   const setSortBy = useViewSettingStore((state) => state.setSortBy)
 
+  const [movies, setMovies] = useState<TmdbMovieListItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadMovies() {
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const response = await getMovies({ page: 1 })
+        if (!ignore) setMovies(response.results)
+      } catch {
+        if (!ignore) setErrorMessage('영화 목록을 불러오지 못했어요.')
+      } finally {
+        if (!ignore) setIsLoading(false)
+      }
+    }
+
+    loadMovies()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
   const sortedMovies = [...movies].sort((a, b) =>
     sortBy === 'title'
       ? a.title.localeCompare(b.title, 'ko')
-      : b.releaseDate.localeCompare(a.releaseDate),
+      : b.release_date.localeCompare(a.release_date),
+  )
+
+  const totalPages = Math.max(1, Math.ceil(movies.length / MOVIES_PER_PAGE))
+  const visibleMovies = sortedMovies.slice(
+    (currentPage - 1) * MOVIES_PER_PAGE,
+    currentPage * MOVIES_PER_PAGE,
   )
 
   return (
@@ -35,15 +72,30 @@ export default function MovieListPage() {
                 sortBy === option.value && 'border-[#111] bg-[#111] text-white',
               )}
               aria-pressed={sortBy === option.value}
-              onClick={() => setSortBy(option.value)}
+              onClick={() => {
+                setSortBy(option.value)
+                setCurrentPage(1)
+              }}
             >
               {option.label}
             </button>
           ))}
         </div>
       </div>
-      <MovieGrid movies={sortedMovies} />
-      <Pagination totalPages={Math.max(1, Math.ceil(movies.length / MOVIES_PER_PAGE))} />
+      {isLoading ? (
+        <p className="py-10 text-center text-[#888]">영화 목록을 불러오는 중이에요...</p>
+      ) : errorMessage ? (
+        <p className="py-10 text-center text-[#e5484d]">{errorMessage}</p>
+      ) : (
+        <>
+          <MovieGrid movies={visibleMovies} />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </>
+      )}
     </main>
   )
 }

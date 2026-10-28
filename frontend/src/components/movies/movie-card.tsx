@@ -1,12 +1,15 @@
 import { Link } from '@tanstack/react-router'
-import type { Movie } from '../../types/movie'
+import type { TmdbMovie } from '../../api/movies/models'
+import { getTmdbPosterUrl } from '../../utils/movies/tmdb-image'
 import { BookmarkButton } from '../bookmark-button'
 
 interface MovieCardProps {
-  movie: Movie
+  movie: TmdbMovie
 }
 
 export default function MovieCard({ movie }: MovieCardProps) {
+  const posterUrl = getTmdbPosterUrl(movie.poster_path)
+
   return (
     <li className="flex w-full min-w-0 flex-col">
       <div className="relative">
@@ -16,11 +19,17 @@ export default function MovieCard({ movie }: MovieCardProps) {
           aria-label={`${movie.title} 상세 보기`}
           className="block"
         >
-          <img
-            src={movie.posterPath}
-            alt={`${movie.title} 포스터`}
-            className="block w-full aspect-2/3 rounded-lg object-cover"
-          />
+          {posterUrl ? (
+            <img
+              src={posterUrl}
+              alt={`${movie.title} 포스터`}
+              className="block w-full aspect-2/3 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="flex w-full aspect-2/3 items-center justify-center rounded-lg bg-[#f1f1f1] text-[13px] text-[#999]">
+              포스터 없음
+            </div>
+          )}
         </Link>
         <BookmarkButton movieId={movie.id} />
       </div>
@@ -35,7 +44,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
             {movie.title}
           </Link>
         </p>
-        <p className="mt-1 mb-0 text-[13px] text-[#8a8a8a]">{movie.releaseDate}</p>
+        <p className="mt-1 mb-0 text-[13px] text-[#8a8a8a]">{movie.release_date}</p>
       </div>
     </li>
   )
