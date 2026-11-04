@@ -6,11 +6,18 @@ interface PaginationProps {
   onPageChange: (page: number) => void
 }
 
+const PAGE_GROUP_SIZE = 10
+
 const arrowClass =
   'cursor-pointer rounded-lg border border-[#ddd] bg-white px-4 py-2 text-sm text-[#333] disabled:cursor-not-allowed disabled:text-[#ccc]'
 
 export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
+  const firstPage = Math.floor((currentPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1
+  const lastPage = Math.min(firstPage + PAGE_GROUP_SIZE - 1, totalPages)
+  const pageNumbers = Array.from(
+    { length: lastPage - firstPage + 1 },
+    (_, index) => firstPage + index,
+  )
 
   return (
     <nav className="mt-10 flex items-center justify-center gap-2" aria-label="페이지 이동">

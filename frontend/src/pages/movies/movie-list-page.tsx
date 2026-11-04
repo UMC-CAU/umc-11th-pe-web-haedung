@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { getMovies } from '../../api/movies/get-movies'
-import type { TmdbMovieListItem } from '../../api/movies/models'
 import MovieGrid from '../../components/movies/movie-grid'
 import Pagination from '../../components/movies/pagination'
 import { useViewSettingStore, type MovieSortBy } from '../../stores/view-setting-store'
 import { cn } from '../../utils/cn'
 
-const MOVIES_PER_PAGE = 10
+const TMDB_MAX_PAGE = 500
 
 const SORT_OPTIONS: { value: MovieSortBy; label: string }[] = [
   { value: 'releaseDate', label: '최신순' },
@@ -17,34 +17,15 @@ export default function MovieListPage() {
   const sortBy = useViewSettingStore((state) => state.sortBy)
   const setSortBy = useViewSettingStore((state) => state.setSortBy)
 
-  const [movies, setMovies] = useState<TmdbMovieListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [page, setPage] = useState(1)
 
-  useEffect(() => {
-    let ignore = false
+  const moviesQuery = useQuery({
+    queryKey: ['movies', 'list', { page }],
+    queryFn: () => getMovies({ page }),
+  })
 
-    async function loadMovies() {
-      setIsLoading(true)
-      setErrorMessage(null)
-
-      try {
-        const response = await getMovies({ page: 1 })
-        if (!ignore) setMovies(response.results)
-      } catch {
-        if (!ignore) setErrorMessage('영화 목록을 불러오지 못했어요.')
-      } finally {
-        if (!ignore) setIsLoading(false)
-      }
-    }
-
-    loadMovies()
-
-    return () => {
-      ignore = true
-    }
-  }, [])
+  const movies = moviesQuery.data?.results ?? []
+  const totalPages = Math.min(moviesQuery.data?.total_pages ?? 0, TMDB_MAX_PAGE)
 
   const sortedMovies = [...movies].sort((a, b) =>
     sortBy === 'title'
@@ -52,11 +33,9 @@ export default function MovieListPage() {
       : b.release_date.localeCompare(a.release_date),
   )
 
-  const totalPages = Math.max(1, Math.ceil(movies.length / MOVIES_PER_PAGE))
-  const visibleMovies = sortedMovies.slice(
-    (currentPage - 1) * MOVIES_PER_PAGE,
-    currentPage * MOVIES_PER_PAGE,
-  )
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage)
+  }
 
   return (
     <main className="mx-auto max-w-300 p-10">
@@ -74,7 +53,7 @@ export default function MovieListPage() {
               aria-pressed={sortBy === option.value}
               onClick={() => {
                 setSortBy(option.value)
-                setCurrentPage(1)
+                setPage(1)
               }}
             >
               {option.label}
@@ -82,17 +61,19 @@ export default function MovieListPage() {
           ))}
         </div>
       </div>
-      {isLoading ? (
+      {moviesQuery.isPending ? (
         <p className="py-10 text-center text-[#888]">영화 목록을 불러오는 중이에요...</p>
-      ) : errorMessage ? (
-        <p className="py-10 text-center text-[#e5484d]">{errorMessage}</p>
+      ) : moviesQuery.isError ? (
+        <p className="py-10 text-center text-[#e5484d]">영화 목록을 불러오지 못했어요.</p>
+      ) : movies.length === 0 ? (
+        <p className="py-10 text-center text-[#888]">표시할 영화가 없어요.</p>
       ) : (
         <>
-          <MovieGrid movies={visibleMovies} />
+          <MovieGrid movies={sortedMovies} />
           <Pagination
-            currentPage={currentPage}
+            currentPage={page}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
           />
         </>
       )}

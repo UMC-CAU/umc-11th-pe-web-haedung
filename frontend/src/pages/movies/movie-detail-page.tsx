@@ -1,7 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { useEffect, useState, type SubmitEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
-import type { TmdbMovieDetail } from "../../api/movies/models";
 import { BookmarkButton } from "../../components/bookmark-button";
 import { cn } from "../../utils/cn";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
@@ -29,46 +29,18 @@ function StatusMessage({ message }: { message: string }) {
 }
 
 export function MovieDetailPage() {
-  const { movieId } = useParams({ from: "/movies/$movieId" });
-  const parsedMovieId = Number(movieId);
-  const isValidMovieId = Number.isInteger(parsedMovieId) && parsedMovieId > 0;
+  const { movieId: movieIdParam } = useParams({ from: "/movies/$movieId" });
+  const movieId = Number(movieIdParam);
+  const isValidMovieId = Number.isInteger(movieId) && movieId > 0;
 
-  const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(isValidMovieId);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [prevMovieId, setPrevMovieId] = useState(movieId);
-
-  // 다른 영화로 이동하면 이전 상태를 렌더 중에 초기화한다 (effect 안에서 setState 하지 않기 위해)
-  if (movieId !== prevMovieId) {
-    setPrevMovieId(movieId);
-    setMovie(null);
-    setErrorMessage(null);
-    setIsLoading(isValidMovieId);
-  }
+  const movieDetailQuery = useQuery({
+    queryKey: ["movies", "detail", movieId],
+    queryFn: () => getMovieDetail(movieId),
+    enabled: isValidMovieId,
+  });
 
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
-
-  useEffect(() => {
-    if (!isValidMovieId) return;
-
-    let ignore = false;
-
-    getMovieDetail(parsedMovieId)
-      .then((response) => {
-        if (!ignore) setMovie(response);
-      })
-      .catch((error: unknown) => {
-        if (!ignore) setErrorMessage(getMovieDetailErrorMessage(error));
-      })
-      .finally(() => {
-        if (!ignore) setIsLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [parsedMovieId, isValidMovieId]);
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,17 +50,15 @@ export function MovieDetailPage() {
     return <StatusMessage message="올바르지 않은 영화 번호예요." />;
   }
 
-  if (isLoading) {
+  if (movieDetailQuery.isPending) {
     return <StatusMessage message="영화 정보를 불러오는 중이에요..." />;
   }
 
-  if (errorMessage) {
-    return <StatusMessage message={errorMessage} />;
+  if (movieDetailQuery.isError) {
+    return <StatusMessage message={getMovieDetailErrorMessage(movieDetailQuery.error)} />;
   }
 
-  if (!movie) {
-    return <StatusMessage message="영화를 찾을 수 없어요." />;
-  }
+  const movie = movieDetailQuery.data;
 
   return (
     <main className="flex-1 bg-[#f5f6f8]">
@@ -100,7 +70,7 @@ export function MovieDetailPage() {
             : undefined
         }
       >
-        {/* 왼쪽을 어둡게 해서 흰 글자가 잘 보이게 */}
+        
         <div className="absolute inset-0 bg-linear-to-r from-black/65 via-black/25 to-transparent" />
         <div className="relative flex h-full flex-col justify-between px-4 pt-7 pb-6 text-white md:px-20">
           <Link
