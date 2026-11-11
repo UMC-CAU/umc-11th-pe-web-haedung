@@ -1,22 +1,22 @@
 import { Link } from '@tanstack/react-router'
 import { useAuth } from '../../auth/auth-context'
 
-const navLinkClass = 'text-[15px] text-[#333] no-underline'
-const navLinkActive = { className: 'underline font-semibold' }
+const navLinkClass = 'text-[15px] font-medium text-[#616773] no-underline'
+const navLinkActive = { className: 'underline font-semibold text-[#17191e]' }
 const primaryButtonClass =
-  'rounded-lg bg-[#3b5aff] px-5 py-2.5 text-sm font-semibold text-white no-underline'
+  'flex h-10 items-center rounded-lg bg-[#3662e3] px-5 text-sm font-bold text-white no-underline'
 
 export default function Header() {
   const { user, logout } = useAuth()
 
   return (
-    <header className="flex items-center justify-between bg-white px-10 py-5">
-      <div className="flex items-center gap-10">
-        <Link to="/" className="flex items-center gap-2 text-inherit no-underline">
-          <img src="/icons/movie.svg" alt="" className="size-6 rounded-lg border-2 border-black" />
-          <span className="text-xl font-bold">UMCine</span>
+    <header className="flex items-center justify-between border-b border-[#edeff3] bg-white px-20 py-6">
+      <div className="flex items-center gap-11">
+        <Link to="/" className="flex items-center gap-2.5 text-[#17191e] no-underline">
+          <img src="/icons/movie.svg" alt="" className="size-8 rounded-lg border-2 border-[#17191e] p-0.5" />
+          <span className="text-xl font-extrabold tracking-tight">UMCine</span>
         </Link>
-        <nav className="flex gap-6" aria-label="주요 메뉴">
+        <nav className="flex gap-8" aria-label="주요 메뉴">
           <Link
             to="/"
             className={navLinkClass}
@@ -34,10 +34,10 @@ export default function Header() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <Link
           to="/search"
-          className="flex size-10 items-center justify-center rounded-full border border-[#ddd] bg-white"
+          className="flex size-10 items-center justify-center rounded-lg border border-[#e3e6ea] bg-white"
           aria-label="검색"
         >
           <img src="/icons/search.svg" alt="" />
@@ -47,7 +47,7 @@ export default function Header() {
             <Link to="/mypage" className={primaryButtonClass}>
               마이페이지
             </Link>
-            <button className="cursor-pointer text-sm text-[#666]" onClick={logout}>
+            <button className="cursor-pointer text-sm text-[#616773]" onClick={logout}>
               로그아웃
             </button>
           </>
