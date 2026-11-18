@@ -1,9 +1,9 @@
-import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { checkEmailDuplicate } from "../../api/members/check-email-duplicate";
 import { checkNicknameDuplicate } from "../../api/members/check-nickname-duplicate";
-import { signup } from "../../api/members/signup";
 import { useAuth } from "../../auth/auth-context";
+import { useSignupMutation } from "../../hooks/use-signup-mutation";
 import "./auth-page.css";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,10 +31,9 @@ type DuplicateCheckKey = "email" | "nickname";
 
 export function SignupPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const signupMutation = useSignupMutation();
 
   const [form, setForm] = useState(DEFAULT_FORM);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [duplicateCheck, setDuplicateCheck] = useState({
     email: DEFAULT_DUPLICATE_CHECK,
     nickname: DEFAULT_DUPLICATE_CHECK,
@@ -107,25 +106,16 @@ export function SignupPage() {
     }
   };
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSubmit || isSubmitting) return;
+    if (!canSubmit || signupMutation.isPending) return;
 
-    setIsSubmitting(true);
-    try {
-      // passwordConfirm은 화면에서만 검사하므로 요청에 포함하지 않음
-      const response = await signup({
-        email: form.email.trim(),
-        nickname: form.nickname.trim(),
-        password: form.password,
-      });
-      alert(response.message);
-      navigate({ to: "/login" });
-    } catch {
-      alert("회원가입에 실패했어요. 다시 시도해 주세요.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    // passwordConfirm은 화면에서만 검사하므로 요청에 포함하지 않음
+    signupMutation.mutate({
+      email: form.email.trim(),
+      nickname: form.nickname.trim(),
+      password: form.password,
+    });
   };
 
   return (
@@ -218,8 +208,8 @@ export function SignupPage() {
           {showConfirmError && <p className="auth-help is-error">비밀번호가 일치하지 않아요.</p>}
         </div>
 
-        <button type="submit" className="auth-submit" disabled={!canSubmit || isSubmitting}>
-          {isSubmitting ? "가입 중" : "가입하기"}
+        <button type="submit" className="auth-submit" disabled={!canSubmit || signupMutation.isPending}>
+          {signupMutation.isPending ? "가입 중" : "가입하기"}
         </button>
 
         <p className="auth-switch">

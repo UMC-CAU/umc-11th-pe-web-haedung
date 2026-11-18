@@ -246,3 +246,8 @@
     margin-top: 40px;
   }
 }
+
+.mypage-edit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

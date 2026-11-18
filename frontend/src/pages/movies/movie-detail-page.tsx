@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { useState, type SubmitEvent } from "react";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
 import { BookmarkButton } from "../../components/bookmark-button";
-import { cn } from "../../utils/cn";
+import { RatingForm } from "../../components/movies/rating-form";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -38,13 +37,6 @@ export function MovieDetailPage() {
     queryFn: () => getMovieDetail(movieId),
     enabled: isValidMovieId,
   });
-
-  const [rating, setRating] = useState(0);
-  const [review, setReview] = useState("");
-
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-  }
 
   if (!isValidMovieId) {
     return <StatusMessage message="올바르지 않은 영화 번호예요." />;
@@ -113,56 +105,7 @@ export function MovieDetailPage() {
           <BookmarkButton movieId={movie.id} variant="label" />
         </section>
 
-        <form
-          className="flex flex-col border-t border-[#e5e7eb] pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8"
-          onSubmit={handleSubmit}
-        >
-          <h2 className="text-xl font-extrabold text-[#111]">내 평점</h2>
-          <p className="mt-1.5 text-[11px] text-[#999]">별점은 필수, 후기는 선택이에요.</p>
-          <div className="mt-3 flex gap-1" role="radiogroup" aria-label="별점">
-            {[1, 2, 3, 4, 5].map((score) => {
-              const isActive = score <= rating;
-              return (
-                <button
-                  key={score}
-                  type="button"
-                  role="radio"
-                  aria-checked={rating === score}
-                  aria-label={`${score}점`}
-                  className={cn(
-                    "flex size-9.5 cursor-pointer items-center justify-center rounded-md border border-[#e5e7eb] bg-white",
-                    isActive && "border-[#3b5aff]",
-                  )}
-                  onClick={() => setRating(score)}
-                >
-                  <img
-                    src="/icons/star.svg"
-                    alt=""
-                    className={cn(
-                      "size-5.5 opacity-60",
-                      // 검은 별 → 노란 별
-                      isActive &&
-                        "opacity-100 filter-[invert(76%)_sepia(61%)_saturate(1000%)_hue-rotate(358deg)]",
-                    )}
-                  />
-                </button>
-              );
-            })}
-          </div>
-          <textarea
-            className="mt-2.5 h-25 resize-none rounded-lg border border-[#e5e7eb] bg-white p-3.5 text-[13px] outline-none placeholder:text-[#aaa] focus:border-[#111]"
-            placeholder="영화를 보고 느낀 점을 남겨보세요."
-            value={review}
-            onChange={(event) => setReview(event.target.value)}
-          />
-          <button
-            type="submit"
-            className="mt-2.5 cursor-pointer rounded-lg bg-[#111] p-3 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={rating === 0}
-          >
-            평점 저장
-          </button>
-        </form>
+        <RatingForm key={movie.id} movieId={movie.id} />
       </div>
     </main>
   );

@@ -1,37 +1,28 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent, type SubmitEvent } from "react";
 import { useAuth } from "../../auth/auth-context";
+import { useMeQuery } from "../../hooks/use-me-query";
+import { useUpdateMeMutation } from "../../hooks/use-update-me-mutation";
 import "../auth/auth-page.css";
 import "./my-page.css";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; 
 
-type CheckState = { status: "idle" | "ok" | "error"; message: string };
-const IDLE: CheckState = { status: "idle", message: "" };
-
 export function MyPageEdit() {
-  const { profile, updateProfile, withdraw, isNicknameTaken } = useAuth();
+  const { profile, updateProfile, withdraw } = useAuth();
   const navigate = useNavigate();
+  const { data: me } = useMeQuery();
+  const updateMeMutation = useUpdateMeMutation();
 
-  const [nickname, setNickname] = useState(profile.nickname);
-  const [nicknameCheck, setNicknameCheck] = useState<CheckState>(IDLE);
+  // 입력 전에는 조회한 내 닉네임을 보여주고, 입력을 시작하면 입력값을 사용
+  const [nicknameInput, setNicknameInput] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState(profile.profileImage);
   const [imageError, setImageError] = useState("");
 
-  const isNicknameChanged = nickname.trim() !== profile.nickname;
-
-  function checkNickname() {
-    const value = nickname.trim();
-    if (value.length < 2 || value.length > 12) {
-      setNicknameCheck({ status: "error", message: "닉네임은 2~12자로 입력해 주세요." });
-    } else if (!isNicknameChanged) {
-      setNicknameCheck({ status: "ok", message: "지금 쓰고 있는 닉네임이에요." });
-    } else if (isNicknameTaken(value)) {
-      setNicknameCheck({ status: "error", message: "이미 사용 중인 닉네임이에요." });
-    } else {
-      setNicknameCheck({ status: "ok", message: "사용할 수 있는 닉네임이에요." });
-    }
-  }
+  const nicknameValue = nicknameInput ?? me?.nickname ?? "";
+  const nickname = nicknameValue.trim();
+  const canSubmit = nickname.length >= 2 && nickname.length <= 12;
+  const showNicknameError = nicknameValue.length > 0 && !canSubmit;
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -52,14 +43,17 @@ export function MyPageEdit() {
     reader.readAsDataURL(file);
   }
 
-  function handleSave() {
-    if (isNicknameChanged && nicknameCheck.status !== "ok") {
-      setNicknameCheck({ status: "error", message: "닉네임 중복 확인을 해 주세요." });
-      return;
-    }
-    updateProfile({ nickname: nickname.trim(), profileImage });
-    navigate({ to: "/mypage" });
-  }
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canSubmit || updateMeMutation.isPending) return;
+
+    // 프로필 이미지는 서버 API가 없어 기존처럼 브라우저에만 저장
+    updateProfile({ nickname, profileImage });
+    updateMeMutation.mutate(
+      { nickname },
+      { onSuccess: () => navigate({ to: "/mypage" }) },
+    );
+  };
 
   function handleWithdraw() {
     if (!window.confirm("정말 탈퇴할까요? 탈퇴하면 복구할 수 없어요.")) return;
@@ -68,14 +62,18 @@ export function MyPageEdit() {
   }
 
   return (
-    <main className="mypage mypage-edit">
+    <form className="mypage mypage-edit" onSubmit={handleSubmit} noValidate>
       <div className="mypage-edit-header">
         <div>
           <h1 className="mypage-title">내 정보 수정</h1>
           <p className="mypage-edit-subtitle">닉네임과 프로필 이미지만 변경할 수 있어요.</p>
         </div>
-        <button type="button" className="mypage-edit-button" onClick={handleSave}>
-          변경사항 저장
+        <button
+          type="submit"
+          className="mypage-edit-button"
+          disabled={!canSubmit || updateMeMutation.isPending}
+        >
+          {updateMeMutation.isPending ? "저장 중" : "변경사항 저장"}
         </button>
       </div>
 
@@ -113,28 +111,16 @@ export function MyPageEdit() {
             <label htmlFor="edit-nickname" className="auth-label">
               닉네임
             </label>
-            <div
-              className={`auth-input-box ${nicknameCheck.status === "error" ? "is-invalid" : ""}`}
-            >
+            <div className={`auth-input-box ${showNicknameError ? "is-invalid" : ""}`}>
               <input
                 id="edit-nickname"
                 maxLength={12}
-                value={nickname}
-                onChange={(event) => {
-                  setNickname(event.target.value);
-                  setNicknameCheck(IDLE);
-                }}
+                value={nicknameValue}
+                onChange={(event) => setNicknameInput(event.target.value)}
               />
-              <button type="button" className="auth-check-button" onClick={checkNickname}>
-                중복 확인
-              </button>
             </div>
-            {nicknameCheck.message && (
-              <p
-                className={`auth-help ${nicknameCheck.status === "ok" ? "is-success" : "is-error"}`}
-              >
-                {nicknameCheck.message}
-              </p>
+            {showNicknameError && (
+              <p className="auth-help is-error">닉네임은 2~12자로 입력해 주세요.</p>
             )}
           </div>
 
@@ -143,7 +129,7 @@ export function MyPageEdit() {
               이메일
             </label>
             <div className="auth-input-box">
-              <input id="edit-email" value={profile.email} readOnly />
+              <input id="edit-email" value={me?.email ?? ""} readOnly />
             </div>
           </div>
         </div>
@@ -160,6 +146,6 @@ export function MyPageEdit() {
           회원 탈퇴
         </button>
       </section>
-    </main>
+    </form>
   );
 }

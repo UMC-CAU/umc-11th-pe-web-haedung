@@ -1,31 +1,35 @@
-import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
-import { useAuth } from "../../auth/auth-context";
+import { useLoginMutation } from "../../hooks/use-login-mutation";
 import "./auth-page.css";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const DEFAULT_FORM = {
+  email: "",
+  password: "",
+};
+
+type LoginFormKey = keyof typeof DEFAULT_FORM;
+
 export function LoginPage() {
-  const { user, login } = useAuth();
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const loginMutation = useLoginMutation();
+  const canSubmit = EMAIL_REGEX.test(form.email.trim()) && form.password.length > 0;
 
-  if (user) {
-    return <Navigate to="/" />;
-  }
+  const handleChangeField = (key: LoginFormKey, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!email.trim() || !password) {
-      setError("이메일과 비밀번호를 입력해 주세요.");
-      return;
-    }
-    if (!login(email.trim(), password)) {
-      setError("이메일 또는 비밀번호가 올바르지 않아요.");
-      return;
-    }
-    navigate({ to: "/" });
-  }
+    if (!canSubmit || loginMutation.isPending) return;
+
+    loginMutation.mutate({
+      email: form.email.trim(),
+      password: form.password,
+    });
+  };
 
   return (
     <main className="auth-page">
@@ -43,8 +47,8 @@ export function LoginPage() {
               type="email"
               placeholder="name@example.com"
               autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              value={form.email}
+              onChange={(event) => handleChangeField("email", event.target.value)}
             />
           </div>
         </div>
@@ -60,19 +64,18 @@ export function LoginPage() {
               type="password"
               placeholder="비밀번호"
               autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              value={form.password}
+              onChange={(event) => handleChangeField("password", event.target.value)}
             />
           </div>
-          {error && (
-            <p className="auth-help is-error" role="alert">
-              {error}
-            </p>
-          )}
         </div>
 
-        <button type="submit" className="auth-submit">
-          로그인
+        <button
+          type="submit"
+          className="auth-submit"
+          disabled={!canSubmit || loginMutation.isPending}
+        >
+          {loginMutation.isPending ? "로그인 중" : "로그인"}
         </button>
 
         <p className="auth-switch">

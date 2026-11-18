@@ -1,38 +1,32 @@
+import { useQueries } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
-import type { TmdbMovieDetail } from "../../api/movies/models";
 import { useAuth } from "../../auth/auth-context";
+import { useFavoritesQuery } from "../../hooks/use-favorites-query";
+import { useMeQuery } from "../../hooks/use-me-query";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
-import { useBookmarkStore } from "../../stores/bookmark-store";
 import "./my-page.css";
 
 const MOVIES_PER_PAGE = 10;
 
 export function MyPage() {
   const { profile } = useAuth();
-  const bookmarkedMovieIds = useBookmarkStore((state) => state.bookmarkedMovieIds);
+  const { data: me } = useMeQuery();
+  const { data: favorites = [] } = useFavoritesQuery();
 
-  const [bookmarkedMovies, setBookmarkedMovies] = useState<TmdbMovieDetail[]>([]);
+  // 서버는 movieId만 주므로 포스터·제목은 TMDB 상세로 받아요.
+  // 상세 페이지와 같은 queryKey라서 이미 본 영화는 캐시를 그대로 써요.
+  const movieDetailQueries = useQueries({
+    queries: favorites.map((favorite) => ({
+      queryKey: ["movies", "detail", favorite.movieId],
+      queryFn: () => getMovieDetail(favorite.movieId),
+    })),
+  });
+  // 상세 조회에 실패한 영화는 건너뛴다
+  const bookmarkedMovies = movieDetailQueries.flatMap((query) => (query.data ? [query.data] : []));
 
-  useEffect(() => {
-    let ignore = false;
-
-    // 북마크된 id마다 상세 정보를 받아오고, 실패한 id(예: 예전 로컬 데이터 id)는 건너뛴다
-    Promise.allSettled(bookmarkedMovieIds.map((movieId) => getMovieDetail(movieId))).then(
-      (results) => {
-        if (ignore) return;
-        setBookmarkedMovies(
-          results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : [])),
-        );
-      },
-    );
-
-    return () => {
-      ignore = true;
-    };
-  }, [bookmarkedMovieIds]);
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(bookmarkedMovies.length / MOVIES_PER_PAGE));
@@ -64,11 +58,11 @@ export function MyPage() {
           </div>
           <dl className="mypage-profile-item">
             <dt>닉네임</dt>
-            <dd>{profile.nickname}</dd>
+            <dd>{me?.nickname}</dd>
           </dl>
           <dl className="mypage-profile-item">
             <dt>이메일</dt>
-            <dd>{profile.email}</dd>
+            <dd>{me?.email}</dd>
           </dl>
         </div>
       </section>
